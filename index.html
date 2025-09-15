@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        
+        <!-- App Information -->
+        <title>GPX Splitter - Split GPX Files by Distance</title>
+        <meta name="description" content="Split GPX track files by distance with interactive elevation charts and maps. Secure, client-side processing with no data upload required." />
+        <meta name="keywords" content="GPX, track, split, hiking, cycling, GPS, elevation, map" />
+        <meta name="author" content="GPX Splitter" />
+        
+        <!-- App Icons -->
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/gpx-splitter-icon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/gpx-splitter-icon-16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/gpx-splitter-icon-180.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/gpx-splitter-icon-152.png" />
+        <meta name="theme-color" content="#059669" />
+        
+        <!-- Security Headers (for static hosting) -->
+        <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+        <meta http-equiv="X-Frame-Options" content="DENY" />
+        <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+        <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+        
+        <!-- Preload critical resources for performance -->
+        <link rel="modulepreload" href="/src/main.tsx" />
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+        
+        <!-- Fallback for users with JavaScript disabled -->
+        <noscript>
+            <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
+                <h1>JavaScript Required</h1>
+                <p>This application requires JavaScript to function properly.</p>
+                <p>Please enable JavaScript in your browser and reload the page.</p>
+            </div>
+        </noscript>
+    </body>
+</html>
