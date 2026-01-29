@@ -28,3 +28,6 @@ dist-ssr
 
 # Test
 coverage
+
+# Deployment
+.wrangler

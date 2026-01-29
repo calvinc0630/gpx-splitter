@@ -78,12 +78,14 @@ export const logger = {
 
     info: (message: string, ...args: unknown[]) => {
         if (CONFIG.FEATURES.VERBOSE_LOGGING) {
+            // eslint-disable-next-line no-console
             console.info(`[${CONFIG.APP_NAME}] INFO:`, message, ...args);
         }
     },
 
     debug: (message: string, ...args: unknown[]) => {
         if (CONFIG.FEATURES.VERBOSE_LOGGING) {
+            // eslint-disable-next-line no-console
             console.debug(`[${CONFIG.APP_NAME}] DEBUG:`, message, ...args);
         }
     },

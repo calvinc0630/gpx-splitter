@@ -2,6 +2,8 @@
 
 A modern web application for splitting GPX tracks into multiple segments with an intuitive visual interface.
 
+**[🚀 Live Demo](https://gpx-splitter.pages.dev/)**
+
 > **Note**: This is a hobby project built for fun and experimentation. Contributions are welcome, but ongoing maintenance is not guaranteed.
 
 ## Features
