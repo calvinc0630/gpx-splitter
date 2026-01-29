@@ -1,23 +1,24 @@
 # GPX Splitter
 
-A modern web application for splitting GPX tracks into multiple segments with an intuitive visual interface.
+Web tool to split GPX tracks into segments with visual map and elevation chart interface.
 
-**[🚀 Live Demo](https://gpx-splitter.pages.dev/)**
+**[Live Demo](https://gpx-splitter.pages.dev/)**
 
-> **Note**: This is a hobby project built for fun and experimentation. Contributions are welcome, but ongoing maintenance is not guaranteed.
+> **Note**: Hobby project built for personal hiking navigation. Contributions are welcome, but ongoing maintenance is not guaranteed.
 
 ## Features
 
-- 🗺️ **Interactive Map Visualization** - View your GPX tracks on an interactive Leaflet map
-- 📊 **Elevation Profile** - See elevation changes along your route
-- ✂️ **Visual Splitting** - Click on the map or elevation chart to create split points
-- 💾 **Export Options** - Download individual segments or all at once
+- View GPX tracks on a map
+- See elevation changes
+- Click to create split points
+- Download segments
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 16+ and npm
+- [just](https://github.com/casey/just) command runner (optional but recommended)
 - Modern web browser with JavaScript enabled
 
 ### Installation
@@ -25,7 +26,7 @@ A modern web application for splitting GPX tracks into multiple segments with an
 1. Clone the repository:
 
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/calvinc0630/gpx-splitter.git
     cd gpx-splitter
     ```
 
@@ -38,31 +39,26 @@ A modern web application for splitting GPX tracks into multiple segments with an
 3. Start the development server:
 
     ```bash
-    npm run dev
+    just dev
     ```
 
 4. Open your browser to `http://localhost:5173`
 
 ## Usage
 
-1. **Upload a GPX file** - Drag and drop a GPX file or click to browse
-2. **View your track** - The track will appear on the map with elevation profile below
-3. **Create split points** - Click on the map or elevation chart to add split points
-4. **Download segments** - Use the export buttons to download individual segments or all at once
+1. Upload a GPX file
+2. Click on the map or chart to add split points
+3. Download the segments
 
 ## Development
 
-### Available Scripts
+### Available Commands
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run test` - Run test suite
-- `npm run test:coverage` - Run tests with coverage report
-- `npm run lint` - Check code with ESLint
-- `npm run lint:fix` - Fix auto-fixable ESLint issues
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check code formatting
+- `just dev` - Start development server
+- `just build` - Build for production
+- `just preview` - Preview production build locally
+- `just test` - Run test suite
+- `just lint` - Check code with ESLint
 
 ## License
 
