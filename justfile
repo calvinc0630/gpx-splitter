@@ -9,11 +9,11 @@ build:
     npm run build
 
 # Preview production build (Vite)
-preview:
+preview: build
     npm run preview
 
 # Preview with Cloudflare Pages dev server
-preview-cf:
+preview-cf: build
     npx wrangler pages dev dist
 
 # Run tests

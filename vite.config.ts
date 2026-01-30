@@ -33,7 +33,7 @@ export default defineConfig(() => ({
                     charts: ['recharts'],
 
                     // GPX processing utilities
-                    'gpx-utils': ['@mapbox/togeojson', 'xml2js'],
+                    'gpx-utils': ['@mapbox/togeojson'],
 
                     // Utility libraries
                     utils: ['es-toolkit', 'file-saver'],

@@ -9,6 +9,7 @@ import { parseGpxFile, GpxParseError, downloadAllSegments, downloadGpxFile } fro
 import { SecurityError } from './utils/security';
 import { findPointAtDistance, DistanceUnit } from './utils/distance';
 import type { GpxTrack } from './types/gpx';
+import { HeaderBadge } from './components/GitHubLink';
 
 function App() {
     const [gpxTrack, setGpxTrack] = useState<GpxTrack | null>(null);
@@ -178,7 +179,12 @@ function App() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
             <div className="max-w-4xl w-full space-y-8">
                 <div className="text-center space-y-4">
-                    <h1 className="text-4xl font-bold text-gray-800">GPX Track Splitter</h1>
+                    <div className="flex items-baseline justify-center gap-3">
+                        <h1 className="text-4xl font-bold text-gray-800 leading-none">
+                            GPX Track Splitter
+                        </h1>
+                        <HeaderBadge />
+                    </div>
                     <p className="text-gray-600 max-w-2xl mx-auto">
                         Upload your GPX file to split hiking tracks into segments. Perfect for "out
                         & back" style trails.
