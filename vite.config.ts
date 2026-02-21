@@ -47,6 +47,10 @@ export default defineConfig(() => ({
 
                 // Generate consistent chunk names for better caching
                 chunkFileNames: chunkInfo => {
+                    // Preserve explicit manualChunks names (they have no facadeModuleId)
+                    if (chunkInfo.name && !chunkInfo.facadeModuleId) {
+                        return `assets/${chunkInfo.name}-[hash].js`;
+                    }
                     const facadeModuleId = chunkInfo.facadeModuleId
                         ? chunkInfo.facadeModuleId
                               .split('/')
