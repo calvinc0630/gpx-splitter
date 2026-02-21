@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://gpx-splitter.pages.dev/sitemap.xml
