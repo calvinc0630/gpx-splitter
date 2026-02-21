@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { execSync } from 'child_process';
+
+const commitSha = execSync('git rev-parse --short HEAD').toString().trim();
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
@@ -9,7 +12,7 @@ export default defineConfig(() => ({
     // Environment-specific settings
     define: {
         // Make environment info available at build time
-        __APP_VERSION__: JSON.stringify('1.0.0'),
+        __APP_VERSION__: JSON.stringify(commitSha),
         __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
     build: {

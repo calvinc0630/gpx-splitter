@@ -11,7 +11,8 @@ describe('Environment Configuration', () => {
     describe('CONFIG constants', () => {
         it('has correct app information', () => {
             expect(CONFIG.APP_NAME).toBe('GPX Track Splitter');
-            expect(CONFIG.APP_VERSION).toBe('1.0.0');
+            expect(typeof CONFIG.APP_VERSION).toBe('string');
+            expect(CONFIG.APP_VERSION.length).toBeGreaterThan(0);
             expect(typeof CONFIG.NODE_ENV).toBe('string');
             expect(typeof CONFIG.IS_PRODUCTION).toBe('boolean');
             expect(typeof CONFIG.IS_DEVELOPMENT).toBe('boolean');

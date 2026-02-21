@@ -1,9 +1,22 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
+
+const commitSha = (() => {
+    try {
+        return execSync('git rev-parse --short HEAD').toString().trim();
+    } catch {
+        return 'test';
+    }
+})();
 
 export default defineConfig({
     plugins: [react()],
+    define: {
+        __APP_VERSION__: JSON.stringify(commitSha),
+        __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    },
     test: {
         globals: true,
         environment: 'jsdom',

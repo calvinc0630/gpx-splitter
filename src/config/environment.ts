@@ -11,7 +11,7 @@ export const CONFIG = {
 
     // Application settings
     APP_NAME: 'GPX Track Splitter',
-    APP_VERSION: '1.0.0',
+    APP_VERSION: (typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev') as string,
 
     // Feature flags for production optimization
     FEATURES: {
