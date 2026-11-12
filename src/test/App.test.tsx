@@ -39,8 +39,8 @@ vi.mock('../components/Map', () => ({
     ),
 }));
 
-vi.mock('../components/ElevationChart', () => ({
-    ElevationChart: ({
+vi.mock('../components/TrackChart', () => ({
+    TrackChart: ({
         track,
         onHover,
         boundaries,
@@ -51,9 +51,9 @@ vi.mock('../components/ElevationChart', () => ({
         boundaries?: number[];
         onSplitPointsChange?: (points: unknown[]) => void;
     }) => (
-        <div data-testid="elevation-chart">
+        <div data-testid="track-chart">
             <div data-testid="chart-track">{track?.name}</div>
-            <div data-testid="elevation-boundaries">{boundaries?.join(',')}</div>
+            <div data-testid="chart-boundaries">{boundaries?.join(',')}</div>
             <button
                 data-testid="trigger-hover"
                 onClick={() => onHover?.({ lat: 40.0, lon: -74.0, elevation: 100 })}
@@ -62,40 +62,6 @@ vi.mock('../components/ElevationChart', () => ({
             </button>
             <button data-testid="add-split-point" onClick={() => onSplitPointsChange?.([5000])}>
                 Add Split Point
-            </button>
-        </div>
-    ),
-}));
-
-vi.mock('../components/SpeedChart', () => ({
-    SpeedChart: ({
-        boundaries,
-        onSplitPointsChange,
-    }: {
-        boundaries?: number[];
-        onSplitPointsChange?: (points: number[]) => void;
-    }) => (
-        <div data-testid="speed-chart">
-            <div data-testid="speed-boundaries">{boundaries?.join(',')}</div>
-            <button data-testid="add-speed-split" onClick={() => onSplitPointsChange?.([2500])}>
-                Add Speed Split
-            </button>
-        </div>
-    ),
-}));
-
-vi.mock('../components/DirectionChart', () => ({
-    DirectionChart: ({
-        boundaries,
-        onSplitPointsChange,
-    }: {
-        boundaries?: number[];
-        onSplitPointsChange?: (points: number[]) => void;
-    }) => (
-        <div data-testid="direction-chart">
-            <div data-testid="direction-boundaries">{boundaries?.join(',')}</div>
-            <button data-testid="add-direction-split" onClick={() => onSplitPointsChange?.([7500])}>
-                Add Direction Split
             </button>
         </div>
     ),
@@ -166,7 +132,7 @@ describe('App Component', () => {
             render(<App />);
 
             expect(screen.queryByTestId('gpx-track-map')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('elevation-chart')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('track-chart')).not.toBeInTheDocument();
         });
     });
 
@@ -208,7 +174,7 @@ describe('App Component', () => {
 
             // Check visualization components are rendered
             expect(screen.getByTestId('gpx-track-map')).toBeInTheDocument();
-            expect(screen.getByTestId('elevation-chart')).toBeInTheDocument();
+            expect(screen.getByTestId('track-chart')).toBeInTheDocument();
         });
 
         it('handles GPX parsing errors gracefully', async () => {
@@ -427,46 +393,31 @@ describe('App Component', () => {
             expect(screen.getByTestId('track-name')).toHaveTextContent('Test Track');
         });
 
-        it('passes track data to elevation chart', () => {
+        it('passes track data to the combined chart', () => {
             expect(screen.getByTestId('chart-track')).toHaveTextContent('Test Track');
         });
 
-        it('handles hover events from elevation chart', () => {
+        it('handles hover events from the combined chart', () => {
             // Initially no hover
             expect(screen.getByTestId('hovered-point')).toHaveTextContent('no-hover');
 
-            // Trigger hover from elevation chart
+            // Trigger hover from the combined chart
             fireEvent.click(screen.getByTestId('trigger-hover'));
 
             expect(screen.getByTestId('hovered-point')).toHaveTextContent('point-hovered');
         });
 
-        it('handles split point changes from elevation chart', () => {
+        it('shares split point changes from the combined chart with the map', () => {
             // Initially no split boundaries
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('0');
 
-            // Add split point from elevation chart
+            // Add split point from the combined chart
             fireEvent.click(screen.getByTestId('add-split-point'));
 
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
+            expect(screen.getByTestId('chart-boundaries')).toHaveTextContent('5000');
         });
 
-        it('shares split point changes from speed chart with elevation chart and map', () => {
-            fireEvent.click(screen.getByTestId('add-speed-split'));
-
-            expect(screen.getByTestId('elevation-boundaries')).toHaveTextContent('2500');
-            expect(screen.getByTestId('speed-boundaries')).toHaveTextContent('2500');
-            expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
-        });
-
-        it('shares split point changes from direction chart with the other charts and map', () => {
-            fireEvent.click(screen.getByTestId('add-direction-split'));
-
-            expect(screen.getByTestId('elevation-boundaries')).toHaveTextContent('7500');
-            expect(screen.getByTestId('speed-boundaries')).toHaveTextContent('7500');
-            expect(screen.getByTestId('direction-boundaries')).toHaveTextContent('7500');
-            expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
-        });
     });
 
     describe('Segment Generation and Download', () => {

@@ -179,8 +179,8 @@ const DirectionChartComponent: React.FC<DirectionChartProps> = ({
                             fontSize={12}
                         />
                         <YAxis
-                            domain={[-180, 180]}
-                            ticks={[-180, -135, -90, -45, 0, 45, 90, 135, 180]}
+                            domain={[-200, 200]}
+                            ticks={[-180, -90, 0, 90, 180]}
                             tickFormatter={value => `${value}°`}
                             stroke="#6b7280"
                             fontSize={12}

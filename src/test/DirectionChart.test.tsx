@@ -80,10 +80,10 @@ describe('DirectionChart', () => {
         );
 
         expect(screen.getByTestId('line-chart')).toHaveAttribute('data-bearings', '90,0');
-        expect(screen.getByTestId('y-axis')).toHaveAttribute('data-domain', '-180,180');
+        expect(screen.getByTestId('y-axis')).toHaveAttribute('data-domain', '-200,200');
         expect(screen.getByTestId('y-axis')).toHaveAttribute(
             'data-ticks',
-            '-180,-135,-90,-45,0,45,90,135,180'
+            '-180,-90,0,90,180'
         );
         expect(screen.getAllByTestId('reference-line')).toHaveLength(2);
         expect(screen.getByTestId('line')).toHaveAttribute('data-connect-null', 'false');
