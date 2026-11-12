@@ -84,6 +84,23 @@ vi.mock('../components/SpeedChart', () => ({
     ),
 }));
 
+vi.mock('../components/DirectionChart', () => ({
+    DirectionChart: ({
+        boundaries,
+        onSplitPointsChange,
+    }: {
+        boundaries?: number[];
+        onSplitPointsChange?: (points: number[]) => void;
+    }) => (
+        <div data-testid="direction-chart">
+            <div data-testid="direction-boundaries">{boundaries?.join(',')}</div>
+            <button data-testid="add-direction-split" onClick={() => onSplitPointsChange?.([7500])}>
+                Add Direction Split
+            </button>
+        </div>
+    ),
+}));
+
 // Mock GPX utilities
 vi.mock('../utils/gpx', async () => {
     const actual = await vi.importActual('../utils/gpx');
@@ -439,6 +456,15 @@ describe('App Component', () => {
 
             expect(screen.getByTestId('elevation-boundaries')).toHaveTextContent('2500');
             expect(screen.getByTestId('speed-boundaries')).toHaveTextContent('2500');
+            expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
+        });
+
+        it('shares split point changes from direction chart with the other charts and map', () => {
+            fireEvent.click(screen.getByTestId('add-direction-split'));
+
+            expect(screen.getByTestId('elevation-boundaries')).toHaveTextContent('7500');
+            expect(screen.getByTestId('speed-boundaries')).toHaveTextContent('7500');
+            expect(screen.getByTestId('direction-boundaries')).toHaveTextContent('7500');
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
         });
     });

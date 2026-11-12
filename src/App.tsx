@@ -4,6 +4,7 @@ import { FileUpload } from './components/FileUpload';
 import { GpxTrackMap } from './components/Map';
 import { ElevationChart } from './components/ElevationChart';
 import { SpeedChart } from './components/SpeedChart';
+import { DirectionChart } from './components/DirectionChart';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Button, Card, InfoCard, Alert } from './components/ui';
 import { parseGpxFile, GpxParseError, downloadAllSegments, downloadGpxFile } from './utils/gpx';
@@ -323,6 +324,31 @@ function App() {
                                     )}
                                 >
                                     <SpeedChart
+                                        track={gpxTrack}
+                                        onHover={setHoveredPoint}
+                                        boundaries={boundaries}
+                                        onSplitPointsChange={setBoundaries}
+                                    />
+                                </ErrorBoundary>
+                            </div>
+
+                            <div className="space-y-4">
+                                <ErrorBoundary
+                                    fallback={error => (
+                                        <div className="h-56 w-full border border-red-300 rounded-lg bg-red-50 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <p className="text-red-600 font-medium">
+                                                    Direction Chart Error
+                                                </p>
+                                                <p className="text-red-500 text-sm mt-1">
+                                                    Unable to display direction chart:{' '}
+                                                    {error.message}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                >
+                                    <DirectionChart
                                         track={gpxTrack}
                                         onHover={setHoveredPoint}
                                         boundaries={boundaries}
