@@ -8,6 +8,7 @@ declare module '@mapbox/togeojson' {
         properties?: {
             name?: string;
             title?: string;
+            coordTimes?: string[] | string[][];
             [key: string]: unknown;
         };
     }

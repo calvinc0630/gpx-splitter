@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import './App.css';
 import { FileUpload } from './components/FileUpload';
 import { GpxTrackMap } from './components/Map';
-import { ElevationChart } from './components/ElevationChart';
+import { TrackChart } from './components/TrackChart';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Button, Card, InfoCard, Alert } from './components/ui';
 import { parseGpxFile, GpxParseError, downloadAllSegments, downloadGpxFile } from './utils/gpx';
@@ -285,21 +285,22 @@ function App() {
                             <div className="space-y-4">
                                 <ErrorBoundary
                                     fallback={error => (
-                                        <div className="h-64 w-full border border-red-300 rounded-lg bg-red-50 flex items-center justify-center">
+                                        <div className="h-80 w-full border border-red-300 rounded-lg bg-red-50 flex items-center justify-center">
                                             <div className="text-center">
                                                 <p className="text-red-600 font-medium">
-                                                    Chart Error
+                                                    Track Chart Error
                                                 </p>
                                                 <p className="text-red-500 text-sm mt-1">
-                                                    Unable to display chart: {error.message}
+                                                    Unable to display track chart: {error.message}
                                                 </p>
                                             </div>
                                         </div>
                                     )}
                                 >
-                                    <ElevationChart
+                                    <TrackChart
                                         track={gpxTrack}
                                         onHover={setHoveredPoint}
+                                        boundaries={boundaries}
                                         onSplitPointsChange={setBoundaries}
                                     />
                                 </ErrorBoundary>

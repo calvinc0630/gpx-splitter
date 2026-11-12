@@ -140,6 +140,58 @@ describe('GPX Utilities', () => {
             });
         });
 
+        it('parses tracks with multiple segments', async () => {
+            const multiSegmentGpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="test">
+  <trk>
+    <name>Multi-segment track</name>
+    <trkseg>
+      <trkpt lat="40.0" lon="-74.0"><time>2024-01-01T10:00:00Z</time></trkpt>
+      <trkpt lat="40.1" lon="-74.1"><time>2024-01-01T10:01:00Z</time></trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="40.2" lon="-74.2"><time>2024-01-01T10:02:00Z</time></trkpt>
+      <trkpt lat="40.3" lon="-74.3"><time>2024-01-01T10:03:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+
+            const result = await parseGpxFile(createMockFile(multiSegmentGpx));
+
+            expect(result.points).toHaveLength(4);
+            expect(result.points.map(({ lat, lon }) => [lat, lon])).toEqual([
+                [40.0, -74.0],
+                [40.1, -74.1],
+                [40.2, -74.2],
+                [40.3, -74.3],
+            ]);
+            expect(result.points.map(point => point.time?.toISOString())).toEqual([
+                '2024-01-01T10:00:00.000Z',
+                '2024-01-01T10:01:00.000Z',
+                '2024-01-01T10:02:00.000Z',
+                '2024-01-01T10:03:00.000Z',
+            ]);
+        });
+
+        it('preserves point timestamps for a single-segment track', async () => {
+            const timestampedGpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="test">
+  <trk>
+    <trkseg>
+      <trkpt lat="40.0" lon="-74.0"><time>2024-01-01T10:00:00Z</time></trkpt>
+      <trkpt lat="40.1" lon="-74.1"><time>2024-01-01T10:01:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+
+            const result = await parseGpxFile(createMockFile(timestampedGpx));
+
+            expect(result.points.map(point => point.time?.toISOString())).toEqual([
+                '2024-01-01T10:00:00.000Z',
+                '2024-01-01T10:01:00.000Z',
+            ]);
+        });
+
         it('extracts waypoints correctly', async () => {
             const file = createMockFile(validGpxContent);
             const result = await parseGpxFile(file);

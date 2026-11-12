@@ -29,15 +29,18 @@ export interface ElevationPoint {
 export interface ElevationChartProps {
     track: GpxTrack;
     onHover?: (point: { lat: number; lon: number; elevation: number } | null) => void;
+    boundaries?: number[];
     onSplitPointsChange?: (boundaries: number[]) => void;
 }
 
 const ElevationChartComponent: React.FC<ElevationChartProps> = ({
     track,
     onHover,
+    boundaries: controlledBoundaries,
     onSplitPointsChange,
 }) => {
-    const [boundaries, setBoundaries] = useState<number[]>([]);
+    const [localBoundaries, setLocalBoundaries] = useState<number[]>([]);
+    const boundaries = controlledBoundaries ?? localBoundaries;
 
     const elevationData = useMemo(() => {
         const points: ElevationPoint[] = [];
@@ -77,23 +80,28 @@ const ElevationChartComponent: React.FC<ElevationChartProps> = ({
         (data: { activeLabel?: string | undefined } | null) => {
             if (data && data.activeLabel !== undefined) {
                 const distance = parseFloat(data.activeLabel);
+                if (!Number.isFinite(distance) || boundaries.includes(distance)) return;
 
                 // Add this distance as a boundary
                 const newBoundaries = [...boundaries, distance].sort((a, b) => a - b);
-                setBoundaries(newBoundaries);
+                if (controlledBoundaries === undefined) {
+                    setLocalBoundaries(newBoundaries);
+                }
 
                 // Update parent components
                 onSplitPointsChange?.(newBoundaries);
             }
         },
-        [boundaries, onSplitPointsChange]
+        [boundaries, controlledBoundaries, onSplitPointsChange]
     );
 
     // Clear all boundaries
     const clearBoundaries = useCallback(() => {
-        setBoundaries([]);
+        if (controlledBoundaries === undefined) {
+            setLocalBoundaries([]);
+        }
         onSplitPointsChange?.([]);
-    }, [onSplitPointsChange]);
+    }, [controlledBoundaries, onSplitPointsChange]);
 
     // Generate boundaries for segments (only used if boundaries are manually set)
     const segmentBoundaries = useMemo(() => {
