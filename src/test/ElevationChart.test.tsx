@@ -330,6 +330,13 @@ describe('ElevationChart Component', () => {
             expect(referenceLine).toHaveAttribute('data-label', 'A');
         });
 
+        it('renders split points received from the shared chart state', () => {
+            render(<ElevationChart track={mockTrack} boundaries={[2.5]} />);
+
+            expect(screen.getByTestId('reference-line')).toHaveAttribute('data-x', '2.5');
+            expect(screen.getByTestId('reference-line')).toHaveAttribute('data-label', 'A');
+        });
+
         it('does not break when onSplitPointsChange is not provided', () => {
             render(<ElevationChart track={mockTrack} />);
 

@@ -68,26 +68,48 @@ export const parseGpxFile = async (file: File): Promise<GpxTrack> => {
             throw new GpxParseError('No tracks found in GPX file');
         }
 
-        // Find the first track (LineString)
+        // Multi-segment tracks are represented as MultiLineString by togeojson.
         const trackFeature = geoJson.features.find(
-            (
-                feature
-            ): feature is GeoJSONFeature & {
-                geometry: { type: 'LineString'; coordinates: number[][] };
-            } => feature.geometry.type === 'LineString'
+            (feature): feature is GeoJSONFeature & {
+                geometry:
+                    | { type: 'LineString'; coordinates: number[][] }
+                    | { type: 'MultiLineString'; coordinates: number[][][] };
+            } =>
+                feature.geometry.type === 'LineString' ||
+                feature.geometry.type === 'MultiLineString'
         );
 
         if (!trackFeature || !trackFeature.geometry.coordinates) {
             throw new GpxParseError('No valid track data found in GPX file');
         }
 
-        // Convert coordinates to track points
-        const points: GpxTrackPoint[] = trackFeature.geometry.coordinates.map((coord: number[]) => {
+        const coordinateSegments =
+            trackFeature.geometry.type === 'LineString'
+                ? [trackFeature.geometry.coordinates]
+                : trackFeature.geometry.coordinates;
+        const coordinates = coordinateSegments.flat();
+        const rawCoordinateTimes = trackFeature.properties?.coordTimes;
+        const coordinateTimeValues: unknown[] = Array.isArray(rawCoordinateTimes)
+            ? rawCoordinateTimes.flat(Infinity)
+            : [];
+        const coordinateTimes = coordinateTimeValues.filter(
+            (time): time is string => typeof time === 'string'
+        );
+
+        // The app represents tracks as a flat point list, so combine all track segments.
+        const points: GpxTrackPoint[] = coordinates.map((coord: number[], index) => {
             const [lon, lat, elevation] = coord;
             const point: GpxTrackPoint = { lat, lon };
 
             if (elevation !== undefined) {
                 point.elevation = elevation;
+            }
+
+            if (coordinateTimes.length === coordinates.length) {
+                const time = new Date(coordinateTimes[index]);
+                if (!Number.isNaN(time.getTime())) {
+                    point.time = time;
+                }
             }
 
             return point;

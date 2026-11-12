@@ -1,0 +1,1 @@
+export { SpeedChart } from './SpeedChart';

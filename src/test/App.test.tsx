@@ -43,14 +43,17 @@ vi.mock('../components/ElevationChart', () => ({
     ElevationChart: ({
         track,
         onHover,
+        boundaries,
         onSplitPointsChange,
     }: {
         track?: { name?: string };
         onHover?: (point: unknown) => void;
+        boundaries?: number[];
         onSplitPointsChange?: (points: unknown[]) => void;
     }) => (
         <div data-testid="elevation-chart">
             <div data-testid="chart-track">{track?.name}</div>
+            <div data-testid="elevation-boundaries">{boundaries?.join(',')}</div>
             <button
                 data-testid="trigger-hover"
                 onClick={() => onHover?.({ lat: 40.0, lon: -74.0, elevation: 100 })}
@@ -59,6 +62,23 @@ vi.mock('../components/ElevationChart', () => ({
             </button>
             <button data-testid="add-split-point" onClick={() => onSplitPointsChange?.([5000])}>
                 Add Split Point
+            </button>
+        </div>
+    ),
+}));
+
+vi.mock('../components/SpeedChart', () => ({
+    SpeedChart: ({
+        boundaries,
+        onSplitPointsChange,
+    }: {
+        boundaries?: number[];
+        onSplitPointsChange?: (points: number[]) => void;
+    }) => (
+        <div data-testid="speed-chart">
+            <div data-testid="speed-boundaries">{boundaries?.join(',')}</div>
+            <button data-testid="add-speed-split" onClick={() => onSplitPointsChange?.([2500])}>
+                Add Speed Split
             </button>
         </div>
     ),
@@ -411,6 +431,14 @@ describe('App Component', () => {
             // Add split point from elevation chart
             fireEvent.click(screen.getByTestId('add-split-point'));
 
+            expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
+        });
+
+        it('shares split point changes from speed chart with elevation chart and map', () => {
+            fireEvent.click(screen.getByTestId('add-speed-split'));
+
+            expect(screen.getByTestId('elevation-boundaries')).toHaveTextContent('2500');
+            expect(screen.getByTestId('speed-boundaries')).toHaveTextContent('2500');
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
         });
     });
