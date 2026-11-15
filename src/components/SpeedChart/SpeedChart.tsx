@@ -9,6 +9,7 @@ import {
     ResponsiveContainer,
     ReferenceLine,
 } from 'recharts';
+import type { MouseHandlerDataParam } from 'recharts';
 import { throttle } from 'es-toolkit';
 import { calculateDistance, DistanceUnit } from '../../utils/distance';
 import type { GpxTrack } from '../../types/gpx';
@@ -88,9 +89,9 @@ const SpeedChartComponent: React.FC<SpeedChartProps> = ({
     // throttled hover handler so map updates aren't excessively frequent
     const handleChartMouseMove = useMemo(
         () =>
-            throttle((data: { activeLabel?: string | undefined } | null) => {
-                if (data && data.activeLabel !== undefined && onHover) {
-                    const distance = parseFloat(String(data.activeLabel));
+            throttle((data: MouseHandlerDataParam) => {
+                if (data.activeLabel !== undefined && onHover) {
+                    const distance = Number(data.activeLabel);
                     if (!Number.isFinite(distance)) return;
 
                     // Find the closest chart point to the active distance.
@@ -187,8 +188,13 @@ const SpeedChartComponent: React.FC<SpeedChartProps> = ({
                             fontSize={12}
                         />
                         <Tooltip
-                            formatter={(value: number) => [`${value.toFixed(1)} km/h`, 'Speed']}
-                            labelFormatter={(label: number) => `Distance: ${label.toFixed(2)} km`}
+                            formatter={value => [
+                                typeof value === 'number'
+                                    ? `${value.toFixed(1)} km/h`
+                                    : String(value ?? ''),
+                                'Speed',
+                            ]}
+                            labelFormatter={label => `Distance: ${Number(label).toFixed(2)} km`}
                             contentStyle={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                                 border: '1px solid #e5e7eb',
