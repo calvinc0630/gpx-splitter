@@ -48,23 +48,51 @@ type SplitPoint = {
     label: string;
 };
 
-const createSplitPointIcon = (label: string, offset: ScreenPoint) => {
-    const minX = Math.min(0, offset.x - SPLIT_MARKER_RADIUS);
-    const minY = Math.min(0, offset.y - SPLIT_MARKER_RADIUS);
-    const maxX = Math.max(0, offset.x + SPLIT_MARKER_RADIUS);
-    const maxY = Math.max(0, offset.y + SPLIT_MARKER_RADIUS);
+type SplitMarkerPlacement = 'on-track' | 'offset';
+type SplitMarkerSize = 'small' | 'medium' | 'large';
+
+const MARKER_SIZE_SCALE: Record<SplitMarkerSize, number> = {
+    small: 0.75,
+    medium: 1,
+    large: 1.4,
+};
+
+const createSplitPointIcon = (
+    label: string,
+    offset: ScreenPoint,
+    placement: SplitMarkerPlacement,
+    sizeScale: number
+) => {
+    const markerRadius = SPLIT_MARKER_RADIUS * sizeScale;
+    const minX = Math.min(0, offset.x - markerRadius);
+    const minY = Math.min(0, offset.y - markerRadius);
+    const maxX = Math.max(0, offset.x + markerRadius);
+    const maxY = Math.max(0, offset.y + markerRadius);
     const width = Math.ceil(maxX - minX);
     const height = Math.ceil(maxY - minY);
     const target = { x: -minX, y: -minY };
     const circle = { x: offset.x - minX, y: offset.y - minY };
+
+    if (placement === 'on-track') {
+        const diameter = markerRadius * 2;
+        const fontSize = 14 * sizeScale;
+        return divIcon({
+            html: `<div style="width:${diameter}px;height:${diameter}px;border-radius:9999px;background:#ef4444;border:2px solid #ffffff;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:${fontSize}px;font-weight:700;line-height:1">${label}</div>`,
+            className: 'custom-split-marker',
+            iconSize: [diameter, diameter],
+            iconAnchor: [markerRadius, markerRadius],
+        });
+    }
+
     const directionLength = Math.hypot(offset.x, offset.y) || 1;
     const connectorEnd = {
-        x: circle.x - (offset.x / directionLength) * SPLIT_MARKER_RADIUS,
-        y: circle.y - (offset.y / directionLength) * SPLIT_MARKER_RADIUS,
+        x: circle.x - (offset.x / directionLength) * markerRadius,
+        y: circle.y - (offset.y / directionLength) * markerRadius,
     };
+    const fontSize = Math.min(12 * sizeScale, (markerRadius * 2 - 4) / label.length);
 
     return divIcon({
-        html: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true"><line x1="${target.x}" y1="${target.y}" x2="${connectorEnd.x}" y2="${connectorEnd.y}" stroke="#b91c1c" stroke-width="1" stroke-linecap="round"/><circle cx="${circle.x}" cy="${circle.y}" r="${SPLIT_MARKER_RADIUS - 1}" fill="#ef4444" stroke="#ffffff" stroke-width="2"/><text x="${circle.x}" y="${circle.y + 4}" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">${label}</text></svg>`,
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true"><line x1="${target.x}" y1="${target.y}" x2="${connectorEnd.x}" y2="${connectorEnd.y}" stroke="#b91c1c" stroke-width="1" stroke-linecap="round"/><circle cx="${circle.x}" cy="${circle.y}" r="${markerRadius - 1}" fill="#ef4444" stroke="#ffffff" stroke-width="2"/><text x="${circle.x}" y="${circle.y + fontSize / 3}" text-anchor="middle" fill="#ffffff" font-size="${fontSize}" font-weight="700">${label}</text></svg>`,
         className: 'custom-split-marker',
         iconSize: [width, height],
         iconAnchor: [target.x, target.y],
@@ -74,7 +102,9 @@ const createSplitPointIcon = (label: string, offset: ScreenPoint) => {
 const SplitPointMarkers: React.FC<{
     splitPoints: SplitPoint[];
     pathCoordinates: [number, number][];
-}> = ({ splitPoints, pathCoordinates }) => {
+    placement: SplitMarkerPlacement;
+    sizeScale: number;
+}> = ({ splitPoints, pathCoordinates, placement, sizeScale }) => {
     const map = useMap();
     const [, setMapViewVersion] = useState(0);
 
@@ -90,9 +120,7 @@ const SplitPointMarkers: React.FC<{
     const targets = splitPoints.map(({ point }) =>
         map.latLngToContainerPoint([point.lat, point.lon])
     );
-    const projectedPath = pathCoordinates.map(coordinate =>
-        map.latLngToContainerPoint(coordinate)
-    );
+    const projectedPath = pathCoordinates.map(coordinate => map.latLngToContainerPoint(coordinate));
     const visibleIndexes = targets.flatMap((target, index) =>
         Number.isFinite(target.x) &&
         Number.isFinite(target.y) &&
@@ -103,10 +131,21 @@ const SplitPointMarkers: React.FC<{
             ? [index]
             : []
     );
-    const markerGroups = getSplitMarkerGroups(
-        visibleIndexes.map(index => targets[index]),
-        projectedPath,
-        mapSize
+    const visibleTargets = visibleIndexes.map(index => targets[index]);
+    const markerGroups = (
+        placement === 'offset'
+            ? getSplitMarkerGroups(
+                  visibleTargets,
+                  projectedPath,
+                  mapSize,
+                  SPLIT_MARKER_RADIUS * sizeScale
+              )
+            : visibleTargets.map((target, index) => ({
+                  target,
+                  indexes: [index],
+                  anchorIndex: index,
+                  offset: { x: 0, y: 0 },
+              }))
     ).map(group => ({
         ...group,
         splitPoints: group.indexes.map(index => splitPoints[visibleIndexes[index]]),
@@ -137,7 +176,7 @@ const SplitPointMarkers: React.FC<{
                                       .map(point => point.label)
                                       .join(', ')}`
                         }
-                        icon={createSplitPointIcon(markerLabel, offset)}
+                        icon={createSplitPointIcon(markerLabel, offset, placement, sizeScale)}
                     >
                         <Popup>
                             <div className="text-sm">
@@ -191,6 +230,8 @@ export const GpxTrackMap: React.FC<GpxTrackMapProps> = ({
     className = '',
 }) => {
     const mapRef = useRef<L.Map | null>(null);
+    const [markerPlacement, setMarkerPlacement] = useState<SplitMarkerPlacement>('offset');
+    const [markerSize, setMarkerSize] = useState<SplitMarkerSize>('medium');
 
     // Performance optimization: use decimated points for rendering large tracks
     const displayPoints = useMemo(() => {
@@ -351,8 +392,64 @@ export const GpxTrackMap: React.FC<GpxTrackMapProps> = ({
                 <SplitPointMarkers
                     splitPoints={splitPoints}
                     pathCoordinates={pathCoordinates}
+                    placement={markerPlacement}
+                    sizeScale={MARKER_SIZE_SCALE[markerSize]}
                 />
             </MapContainer>
+
+            <details className="absolute right-4 top-4 z-[1000]">
+                <summary
+                    aria-label="Split marker settings"
+                    title="Split marker settings"
+                    className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-800 shadow-lg hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                    <svg
+                        aria-hidden="true"
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    >
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </summary>
+                <div className="mt-2 w-60 space-y-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-800 shadow-lg">
+                    <label className="block">
+                        <span className="mb-1 block font-medium">Marker placement</span>
+                        <select
+                            className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                            value={markerPlacement}
+                            onChange={event =>
+                                setMarkerPlacement(
+                                    event.target.value === 'on-track' ? 'on-track' : 'offset'
+                                )
+                            }
+                        >
+                            <option value="on-track">On track (original)</option>
+                            <option value="offset">Offset with connector</option>
+                        </select>
+                    </label>
+                    <label className="block">
+                        <span className="mb-1 block font-medium">Marker size</span>
+                        <select
+                            className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                            value={markerSize}
+                            onChange={event => {
+                                const value = event.target.value;
+                                if (value === 'small' || value === 'medium' || value === 'large') {
+                                    setMarkerSize(value);
+                                }
+                            }}
+                        >
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                        </select>
+                    </label>
+                </div>
+            </details>
 
             <div className="absolute top-4 left-4 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
                 <h3 className="font-semibold text-sm text-gray-800 mb-1">{track.name}</h3>

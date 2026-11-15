@@ -10,14 +10,11 @@ export interface SplitMarkerGroup {
     offset: ScreenPoint | null;
 }
 
-export const SPLIT_MARKER_RADIUS = 11;
+export const SPLIT_MARKER_RADIUS = 16;
 export const TRACK_LINE_WIDTH = 4;
 
-const TRACK_CLEARANCE = SPLIT_MARKER_RADIUS + TRACK_LINE_WIDTH / 2 + 3;
-const MARKER_CLEARANCE = SPLIT_MARKER_RADIUS * 2 + 4;
 const SEARCH_DIRECTIONS = 16;
 const SEARCH_STEP = 8;
-const GRID_STEP = MARKER_CLEARANCE;
 
 interface Segment {
     start: ScreenPoint;
@@ -37,8 +34,7 @@ const distanceToSegment = (point: ScreenPoint, segment: Segment): number => {
         0,
         Math.min(
             1,
-            ((point.x - segment.start.x) * dx + (point.y - segment.start.y) * dy) /
-                lengthSquared
+            ((point.x - segment.start.x) * dx + (point.y - segment.start.y) * dy) / lengthSquared
         )
     );
     return distanceBetween(point, {
@@ -73,7 +69,8 @@ const preferredAngle = (target: ScreenPoint, segments: Segment[]): number => {
 export const getNonOverlappingSplitMarkerOffsets = (
     targets: ScreenPoint[],
     path: ScreenPoint[],
-    mapSize: ScreenPoint
+    mapSize: ScreenPoint,
+    markerRadius = SPLIT_MARKER_RADIUS
 ): Array<ScreenPoint | null> => {
     if (targets.length === 0) return [];
     if (
@@ -89,14 +86,12 @@ export const getNonOverlappingSplitMarkerOffsets = (
     const placedCenters: ScreenPoint[] = [];
     const offsets: Array<ScreenPoint | null> = [];
     const maxRadius = Math.hypot(mapSize.x, mapSize.y);
+    const trackClearance = markerRadius + TRACK_LINE_WIDTH / 2 + 3;
+    const markerClearance = markerRadius * 2 + 4;
+    const gridStep = markerClearance;
 
     for (const target of targets) {
-        if (
-            target.x < 0 ||
-            target.x > mapSize.x ||
-            target.y < 0 ||
-            target.y > mapSize.y
-        ) {
+        if (target.x < 0 || target.x > mapSize.x || target.y < 0 || target.y > mapSize.y) {
             offsets.push(null);
             continue;
         }
@@ -104,16 +99,20 @@ export const getNonOverlappingSplitMarkerOffsets = (
         const angle = preferredAngle(target, segments);
         let selectedCenter: ScreenPoint | null = null;
         const isClear = (center: ScreenPoint): boolean =>
-            center.x >= SPLIT_MARKER_RADIUS &&
-            center.x <= mapSize.x - SPLIT_MARKER_RADIUS &&
-            center.y >= SPLIT_MARKER_RADIUS &&
-            center.y <= mapSize.y - SPLIT_MARKER_RADIUS &&
-            segments.every(segment => distanceToSegment(center, segment) >= TRACK_CLEARANCE) &&
+            center.x >= markerRadius &&
+            center.x <= mapSize.x - markerRadius &&
+            center.y >= markerRadius &&
+            center.y <= mapSize.y - markerRadius &&
+            segments.every(segment => distanceToSegment(center, segment) >= trackClearance) &&
             placedCenters.every(
-                placedCenter => distanceBetween(placedCenter, center) >= MARKER_CLEARANCE
+                placedCenter => distanceBetween(placedCenter, center) >= markerClearance
             );
 
-        for (let radius = TRACK_CLEARANCE; radius <= maxRadius && !selectedCenter; radius += SEARCH_STEP) {
+        for (
+            let radius = trackClearance;
+            radius <= maxRadius && !selectedCenter;
+            radius += SEARCH_STEP
+        ) {
             for (let direction = 0; direction < SEARCH_DIRECTIONS; direction++) {
                 const candidateAngle = angle + (Math.PI * 2 * direction) / SEARCH_DIRECTIONS;
                 const candidate = {
@@ -129,16 +128,8 @@ export const getNonOverlappingSplitMarkerOffsets = (
 
         if (!selectedCenter) {
             let nearestDistance = Infinity;
-            for (
-                let y = SPLIT_MARKER_RADIUS;
-                y <= mapSize.y - SPLIT_MARKER_RADIUS;
-                y += GRID_STEP
-            ) {
-                for (
-                    let x = SPLIT_MARKER_RADIUS;
-                    x <= mapSize.x - SPLIT_MARKER_RADIUS;
-                    x += GRID_STEP
-                ) {
+            for (let y = markerRadius; y <= mapSize.y - markerRadius; y += gridStep) {
+                for (let x = markerRadius; x <= mapSize.x - markerRadius; x += gridStep) {
                     const candidate = { x, y };
                     const distance = distanceBetween(target, candidate);
                     if (distance < nearestDistance && isClear(candidate)) {
@@ -164,7 +155,8 @@ export const getNonOverlappingSplitMarkerOffsets = (
 export const getSplitMarkerGroups = (
     targets: ScreenPoint[],
     path: ScreenPoint[],
-    mapSize: ScreenPoint
+    mapSize: ScreenPoint,
+    markerRadius = SPLIT_MARKER_RADIUS
 ): SplitMarkerGroup[] => {
     let groups: SplitMarkerGroup[] = targets.map((target, index) => ({
         target,
@@ -177,7 +169,8 @@ export const getSplitMarkerGroups = (
         const offsets = getNonOverlappingSplitMarkerOffsets(
             groups.map(group => group.target),
             path,
-            mapSize
+            mapSize,
+            markerRadius
         );
         const unplacedIndexes = offsets.flatMap((offset, index) =>
             offset === null ? [index] : []

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GpxTrackMap } from '../components/Map';
 import type { GpxTrack } from '../types/gpx';
@@ -103,10 +103,7 @@ vi.mock('react-leaflet', () => ({
 
 // Mock Leaflet
 vi.mock('leaflet', () => ({
-    LatLngBounds: vi.fn(function (
-        southWest: [number, number],
-        northEast: [number, number]
-    ) {
+    LatLngBounds: vi.fn(function (southWest: [number, number], northEast: [number, number]) {
         return {
             southWest,
             northEast,
@@ -357,6 +354,7 @@ describe('GpxTrackMap Component', () => {
             const iconSize = JSON.parse(splitMarker?.getAttribute('data-icon-size') || '[]');
             const iconAnchor = JSON.parse(splitMarker?.getAttribute('data-icon-anchor') || '[]');
             expect(iconSize).toHaveLength(2);
+            expect(iconSize).toEqual([32, 32]);
             expect(iconAnchor).toHaveLength(2);
             expect(iconSize[0]).toBeGreaterThan(0);
             expect(iconSize[1]).toBeGreaterThan(0);
@@ -371,18 +369,59 @@ describe('GpxTrackMap Component', () => {
             expect(iconHtml).toContain('>A</text>');
         });
 
+        it('offers the original on-track marker style and adjustable marker sizes', () => {
+            render(<GpxTrackMap track={mockTrack} boundaries={[0]} />);
+            const splitMarker = () =>
+                screen
+                    .getAllByTestId('marker')
+                    .find(
+                        marker => marker.getAttribute('data-icon-class') === 'custom-split-marker'
+                    );
+
+            expect(screen.getByTitle('Split marker settings')).toHaveAttribute(
+                'aria-label',
+                'Split marker settings'
+            );
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('<svg');
+            fireEvent.change(screen.getByLabelText('Marker size'), {
+                target: { value: 'large' },
+            });
+            const largeOffsetMarker = splitMarker()?.getAttribute('data-icon-html') || '';
+            const largeOffsetRadius = largeOffsetMarker.match(/<circle[^>]*r="([^"]+)"/);
+            expect(Number(largeOffsetRadius?.[1])).toBeCloseTo(21.4);
+
+            fireEvent.change(screen.getByLabelText('Marker placement'), {
+                target: { value: 'on-track' },
+            });
+
+            expect(splitMarker()).toHaveAttribute(
+                'data-position',
+                JSON.stringify([mockTrack.points[0].lat, mockTrack.points[0].lon])
+            );
+            expect(splitMarker()).toHaveAttribute('data-icon-anchor', '[22.4,22.4]');
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('width:44.8px');
+            expect(splitMarker()?.getAttribute('data-icon-html')).not.toContain('<svg');
+
+            fireEvent.change(screen.getByLabelText('Marker size'), {
+                target: { value: 'small' },
+            });
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('width:24px');
+        });
+
         it('clusters crowded markers and keeps every split point in the cluster popup', () => {
-            mockMapState.size = { x: 50, y: 50 };
-            mockMapState.project = () => ({ x: 25, y: 25 });
+            mockMapState.size = { x: 80, y: 80 };
+            mockMapState.project = () => ({ x: 40, y: 40 });
             render(<GpxTrackMap track={mockTrack} boundaries={[0, 1, 2, 3, 4]} />);
 
             const splitMarkers = screen
                 .getAllByTestId('marker')
                 .filter(marker => marker.getAttribute('data-icon-class') === 'custom-split-marker');
 
-            expect(splitMarkers.some(marker => marker.getAttribute('data-title')?.includes('split points'))).toBe(
-                true
-            );
+            expect(
+                splitMarkers.some(marker =>
+                    marker.getAttribute('data-title')?.includes('split points')
+                )
+            ).toBe(true);
             expect(screen.getByText(/^\d+ Split Points$/)).toBeInTheDocument();
             for (const label of ['A', 'B', 'C', 'D', 'E']) {
                 expect(screen.getByText(`Split Point ${label}`)).toBeInTheDocument();
