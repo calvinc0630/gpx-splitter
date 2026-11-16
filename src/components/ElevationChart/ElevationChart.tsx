@@ -9,6 +9,7 @@ import {
     ResponsiveContainer,
     ReferenceLine,
 } from 'recharts';
+import type { MouseHandlerDataParam } from 'recharts';
 import { throttle } from 'es-toolkit';
 import { calculateDistance, DistanceUnit } from '../../utils/distance';
 import type { GpxTrack } from '../../types/gpx';
@@ -77,9 +78,9 @@ const ElevationChartComponent: React.FC<ElevationChartProps> = ({
 
     // Handle chart click to add split points
     const handleChartClick = useCallback(
-        (data: { activeLabel?: string | undefined } | null) => {
-            if (data && data.activeLabel !== undefined) {
-                const distance = parseFloat(data.activeLabel);
+        (data: MouseHandlerDataParam) => {
+            if (data.activeLabel !== undefined) {
+                const distance = Number(data.activeLabel);
                 if (!Number.isFinite(distance) || boundaries.includes(distance)) return;
 
                 // Add this distance as a boundary
@@ -110,9 +111,9 @@ const ElevationChartComponent: React.FC<ElevationChartProps> = ({
 
     // Handle mouse events from Recharts - memory-safe throttled implementation
     const handleChartMouseMove = useMemo(() => {
-        const baseHandler = (data: { activeLabel?: string | undefined } | null) => {
-            if (data && data.activeLabel !== undefined && onHover) {
-                const distance = parseFloat(data.activeLabel);
+        const baseHandler = (data: MouseHandlerDataParam) => {
+            if (data.activeLabel !== undefined && onHover) {
+                const distance = Number(data.activeLabel);
                 const point = elevationData.find(p => Math.abs(p.distance - distance) < 0.01);
                 if (point) {
                     onHover({
@@ -211,8 +212,13 @@ const ElevationChartComponent: React.FC<ElevationChartProps> = ({
                             fontSize={12}
                         />
                         <Tooltip
-                            formatter={(value: number) => [`${value.toFixed(0)} m`, 'Elevation']}
-                            labelFormatter={(label: number) => `Distance: ${label.toFixed(2)} km`}
+                            formatter={value => [
+                                typeof value === 'number'
+                                    ? `${value.toFixed(0)} m`
+                                    : String(value ?? ''),
+                                'Elevation',
+                            ]}
+                            labelFormatter={label => `Distance: ${Number(label).toFixed(2)} km`}
                             contentStyle={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                                 border: '1px solid #e5e7eb',
