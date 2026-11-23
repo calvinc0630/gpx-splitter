@@ -26,8 +26,8 @@ lint:
 
 # Build and deploy to dev environment
 ship-dev: lint test build
-    npx wrangler pages deploy dist --branch=dev
+    npx wrangler pages deploy dist --project-name=gpx-splitter --branch=dev
 
 # Build and deploy to production
 ship: lint test build
-    npx wrangler pages deploy dist --branch=main
+    npx wrangler pages deploy dist --project-name=gpx-splitter --branch=main
