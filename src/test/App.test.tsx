@@ -39,18 +39,21 @@ vi.mock('../components/Map', () => ({
     ),
 }));
 
-vi.mock('../components/ElevationChart', () => ({
-    ElevationChart: ({
+vi.mock('../components/TrackChart', () => ({
+    TrackChart: ({
         track,
         onHover,
+        boundaries,
         onSplitPointsChange,
     }: {
         track?: { name?: string };
         onHover?: (point: unknown) => void;
+        boundaries?: number[];
         onSplitPointsChange?: (points: unknown[]) => void;
     }) => (
-        <div data-testid="elevation-chart">
+        <div data-testid="track-chart">
             <div data-testid="chart-track">{track?.name}</div>
+            <div data-testid="chart-boundaries">{boundaries?.join(',')}</div>
             <button
                 data-testid="trigger-hover"
                 onClick={() => onHover?.({ lat: 40.0, lon: -74.0, elevation: 100 })}
@@ -129,7 +132,7 @@ describe('App Component', () => {
             render(<App />);
 
             expect(screen.queryByTestId('gpx-track-map')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('elevation-chart')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('track-chart')).not.toBeInTheDocument();
         });
     });
 
@@ -171,7 +174,7 @@ describe('App Component', () => {
 
             // Check visualization components are rendered
             expect(screen.getByTestId('gpx-track-map')).toBeInTheDocument();
-            expect(screen.getByTestId('elevation-chart')).toBeInTheDocument();
+            expect(screen.getByTestId('track-chart')).toBeInTheDocument();
         });
 
         it('handles GPX parsing errors gracefully', async () => {
@@ -390,29 +393,31 @@ describe('App Component', () => {
             expect(screen.getByTestId('track-name')).toHaveTextContent('Test Track');
         });
 
-        it('passes track data to elevation chart', () => {
+        it('passes track data to the combined chart', () => {
             expect(screen.getByTestId('chart-track')).toHaveTextContent('Test Track');
         });
 
-        it('handles hover events from elevation chart', () => {
+        it('handles hover events from the combined chart', () => {
             // Initially no hover
             expect(screen.getByTestId('hovered-point')).toHaveTextContent('no-hover');
 
-            // Trigger hover from elevation chart
+            // Trigger hover from the combined chart
             fireEvent.click(screen.getByTestId('trigger-hover'));
 
             expect(screen.getByTestId('hovered-point')).toHaveTextContent('point-hovered');
         });
 
-        it('handles split point changes from elevation chart', () => {
+        it('shares split point changes from the combined chart with the map', () => {
             // Initially no split boundaries
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('0');
 
-            // Add split point from elevation chart
+            // Add split point from the combined chart
             fireEvent.click(screen.getByTestId('add-split-point'));
 
             expect(screen.getByTestId('split-boundaries')).toHaveTextContent('1');
+            expect(screen.getByTestId('chart-boundaries')).toHaveTextContent('5000');
         });
+
     });
 
     describe('Segment Generation and Download', () => {

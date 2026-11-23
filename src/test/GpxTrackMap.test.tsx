@@ -1,7 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GpxTrackMap } from '../components/Map';
 import type { GpxTrack } from '../types/gpx';
+
+const mockMapState = vi.hoisted(() => ({
+    size: { x: 800, y: 600 },
+    project: null as ((lat: number, lon: number) => { x: number; y: number }) | null,
+}));
 
 // Mock React-Leaflet components
 vi.mock('react-leaflet', () => ({
@@ -49,17 +54,30 @@ vi.mock('react-leaflet', () => ({
     ),
     Marker: ({
         position,
+        title,
         icon,
         children,
     }: {
         position?: [number, number];
-        icon?: { options?: { className?: string } };
+        title?: string;
+        icon?: {
+            options?: {
+                className?: string;
+                iconSize?: [number, number];
+                iconAnchor?: [number, number];
+                html?: string;
+            };
+        };
         children?: React.ReactNode;
     }) => (
         <div
             data-testid="marker"
             data-position={JSON.stringify(position)}
+            data-title={title}
             data-icon-class={icon?.options?.className}
+            data-icon-size={JSON.stringify(icon?.options?.iconSize)}
+            data-icon-anchor={JSON.stringify(icon?.options?.iconAnchor)}
+            data-icon-html={icon?.options?.html}
         >
             {children}
         </div>
@@ -71,17 +89,28 @@ vi.mock('react-leaflet', () => ({
         fitBounds: vi.fn(),
         getZoom: () => 13,
         getCenter: () => ({ lat: 40.0, lng: -74.0 }),
+        getSize: () => mockMapState.size,
+        latLngToContainerPoint: ([lat, lon]: [number, number]) => ({
+            ...(mockMapState.project?.(lat, lon) ?? {
+                x: (lon + 75) * 400 + 200,
+                y: (41 - lat) * 400 + 100,
+            }),
+        }),
+        on: vi.fn(),
+        off: vi.fn(),
     }),
 }));
 
 // Mock Leaflet
 vi.mock('leaflet', () => ({
-    LatLngBounds: vi.fn().mockImplementation((southWest, northEast) => ({
-        southWest,
-        northEast,
-        _southWest: southWest,
-        _northEast: northEast,
-    })),
+    LatLngBounds: vi.fn(function (southWest: [number, number], northEast: [number, number]) {
+        return {
+            southWest,
+            northEast,
+            _southWest: southWest,
+            _northEast: northEast,
+        };
+    }),
     divIcon: vi.fn().mockImplementation(options => ({
         options,
         type: 'divIcon',
@@ -126,6 +155,8 @@ describe('GpxTrackMap Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockMapState.size = { x: 800, y: 600 };
+        mockMapState.project = null;
     });
 
     describe('Basic Rendering', () => {
@@ -307,6 +338,94 @@ describe('GpxTrackMap Component', () => {
             );
 
             expect(splitMarkers).toHaveLength(2);
+        });
+
+        it('offsets split markers beside the trace and connects them to the exact target', () => {
+            render(<GpxTrackMap track={mockTrack} boundaries={[0]} />);
+
+            const splitMarker = screen
+                .getAllByTestId('marker')
+                .find(marker => marker.getAttribute('data-icon-class') === 'custom-split-marker');
+
+            expect(splitMarker).toHaveAttribute(
+                'data-position',
+                JSON.stringify([mockTrack.points[0].lat, mockTrack.points[0].lon])
+            );
+            const iconSize = JSON.parse(splitMarker?.getAttribute('data-icon-size') || '[]');
+            const iconAnchor = JSON.parse(splitMarker?.getAttribute('data-icon-anchor') || '[]');
+            expect(iconSize).toHaveLength(2);
+            expect(iconSize).toEqual([32, 32]);
+            expect(iconAnchor).toHaveLength(2);
+            expect(iconSize[0]).toBeGreaterThan(0);
+            expect(iconSize[1]).toBeGreaterThan(0);
+            expect(iconAnchor[0]).toBeGreaterThanOrEqual(0);
+            expect(iconAnchor[1]).toBeGreaterThanOrEqual(0);
+            const iconHtml = splitMarker?.getAttribute('data-icon-html') || '';
+            const connectorStart = iconHtml.match(/<line[^>]*x1="([^"]+)" y1="([^"]+)"/);
+            expect(connectorStart).not.toBeNull();
+            expect(Number(connectorStart?.[1])).toBeCloseTo(iconAnchor[0]);
+            expect(Number(connectorStart?.[2])).toBeCloseTo(iconAnchor[1]);
+            expect(iconHtml).toContain('<circle');
+            expect(iconHtml).toContain('>A</text>');
+        });
+
+        it('offers the original on-track marker style and adjustable marker sizes', () => {
+            render(<GpxTrackMap track={mockTrack} boundaries={[0]} />);
+            const splitMarker = () =>
+                screen
+                    .getAllByTestId('marker')
+                    .find(
+                        marker => marker.getAttribute('data-icon-class') === 'custom-split-marker'
+                    );
+
+            expect(screen.getByTitle('Split marker settings')).toHaveAttribute(
+                'aria-label',
+                'Split marker settings'
+            );
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('<svg');
+            fireEvent.change(screen.getByLabelText('Marker size'), {
+                target: { value: 'large' },
+            });
+            const largeOffsetMarker = splitMarker()?.getAttribute('data-icon-html') || '';
+            const largeOffsetRadius = largeOffsetMarker.match(/<circle[^>]*r="([^"]+)"/);
+            expect(Number(largeOffsetRadius?.[1])).toBeCloseTo(21.4);
+
+            fireEvent.change(screen.getByLabelText('Marker placement'), {
+                target: { value: 'on-track' },
+            });
+
+            expect(splitMarker()).toHaveAttribute(
+                'data-position',
+                JSON.stringify([mockTrack.points[0].lat, mockTrack.points[0].lon])
+            );
+            expect(splitMarker()).toHaveAttribute('data-icon-anchor', '[22.4,22.4]');
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('width:44.8px');
+            expect(splitMarker()?.getAttribute('data-icon-html')).not.toContain('<svg');
+
+            fireEvent.change(screen.getByLabelText('Marker size'), {
+                target: { value: 'small' },
+            });
+            expect(splitMarker()?.getAttribute('data-icon-html')).toContain('width:24px');
+        });
+
+        it('clusters crowded markers and keeps every split point in the cluster popup', () => {
+            mockMapState.size = { x: 80, y: 80 };
+            mockMapState.project = () => ({ x: 40, y: 40 });
+            render(<GpxTrackMap track={mockTrack} boundaries={[0, 1, 2, 3, 4]} />);
+
+            const splitMarkers = screen
+                .getAllByTestId('marker')
+                .filter(marker => marker.getAttribute('data-icon-class') === 'custom-split-marker');
+
+            expect(
+                splitMarkers.some(marker =>
+                    marker.getAttribute('data-title')?.includes('split points')
+                )
+            ).toBe(true);
+            expect(screen.getByText(/^\d+ Split Points$/)).toBeInTheDocument();
+            for (const label of ['A', 'B', 'C', 'D', 'E']) {
+                expect(screen.getByText(`Split Point ${label}`)).toBeInTheDocument();
+            }
         });
 
         it('displays split point information in overlay', () => {
