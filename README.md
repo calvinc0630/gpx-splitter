@@ -9,8 +9,10 @@ Web tool to split GPX tracks into segments with visual map and elevation chart i
 ## Features
 
 - View GPX tracks on a map
-- See elevation changes
-- Click to create split points
+- Combined track chart with elevation, speed, and direction
+- Hover-sync: hover the chart to highlight the position on the map
+- Click the chart to create split points (A, B, C…) with collision-free map markers
+- Supports multi-segment GPX tracks (MultiLineString)
 - Download segments
 
 ## Quick Start
@@ -47,8 +49,9 @@ Web tool to split GPX tracks into segments with visual map and elevation chart i
 ## Usage
 
 1. Upload a GPX file
-2. Click on the map or chart to add split points
-3. Download the segments
+2. Explore the combined track chart: toggle elevation, speed, and direction curves; hover to preview the location on the map (speed and direction require time/bearing data in the file)
+3. Click on the map or chart to add split points
+4. Download the segments
 
 ## Development
 
@@ -67,6 +70,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - [Leaflet](https://leafletjs.com/) for map visualization
-- [Recharts](https://recharts.org/) for elevation charts
+- [Recharts](https://recharts.org/) for track charts
 - [@mapbox/togeojson](https://github.com/mapbox/togeojson) for GPX parsing
 - [React](https://reactjs.org/) and [Vite](https://vitejs.dev/) for the development experience
